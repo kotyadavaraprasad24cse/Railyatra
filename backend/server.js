@@ -149,8 +149,12 @@ function generatePNR() {
     return 'PNR' + Math.floor(1000000 + Math.random() * 9000000);
 }
 
+app.get('/', (req, res) => {
+  res.json({ status: 'ok', message: 'RailYatra backend is running!' });
+});
+
 app.get('/health', (req, res) => {
-    res.json({ ok: true, message: 'RailYatra backend is running' });
+  res.json({ ok: true, message: 'RailYatra backend is running' });
 });
 
 //////////////////////////////////////////////////////////////
