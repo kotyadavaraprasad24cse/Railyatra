@@ -409,7 +409,11 @@
 <script>
 // ── API CONFIGURATION ─────────────────────────────────────
 // Update this to match your backend server URL
-const API_BASE = 'http://localhost:3000';
+// For local development: http://localhost:3000
+// For production: Update to your deployed backend URL
+const API_BASE = window.location.hostname === 'localhost' 
+  ? 'http://localhost:3000' 
+  : 'https://your-deployed-backend-url.com'; // Change this to your production backend URL
 
 // ── STATIONS ─────────────────────────────────────────────
 let stations = [

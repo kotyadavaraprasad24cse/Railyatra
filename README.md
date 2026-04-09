@@ -79,6 +79,72 @@ All sensitive data must be set via environment variables (see `.env.example`). N
 - MySQL database stores all persistent data
 - Train master data is seeded on server startup
 
+## Deployment Guide
+
+### For Local Development
+1. Follow the Installation steps above
+2. Run backend on `http://localhost:3000`
+3. Open `railway-frontend.html` in browser
+4. Frontend automatically detects localhost and connects to local backend
+
+### For Production (Public Deployment)
+
+**Step 1: Deploy Backend**
+
+Choose one of these services:
+
+**Option A: Railway.app (Recommended - Free Tier)**
+```bash
+npm install -g railway
+railway login
+railway init
+railway up
+```
+
+**Option B: Heroku**
+```bash
+npm install -g heroku
+heroku login
+heroku create your-app-name
+git push heroku main
+```
+
+**Option C: Render.com**
+- Connect GitHub repo
+- Set environment variables
+- Deploy automatically
+
+**Step 2: Update Frontend API URL**
+
+After deploying backend, edit `railway-frontend.html`:
+```javascript
+// Line ~15
+const API_BASE = window.location.hostname === 'localhost' 
+  ? 'http://localhost:3000' 
+  : 'https://your-deployed-backend-url.com'; // Add your backend URL here
+```
+
+Replace `https://your-deployed-backend-url.com` with your actual backend URL (e.g., `https://railyatra-backend.railway.app`)
+
+**Step 3: Deploy Frontend**
+
+Host frontend on:
+- **GitHub Pages** (static hosting)
+- **Vercel** (free, zero-config)
+- **Netlify** (free, zero-config)
+- **Any web server**
+
+### Environment Variables for Deployed Backend
+
+When deploying the backend, set these variables in your hosting platform:
+```
+DB_HOST=your_database_host
+DB_USER=your_database_user
+DB_PASSWORD=your_database_password
+DB_NAME=railway
+PORT=3000 (or as required by platform)
+```
+
 ## Notes
 
 - `node_modules/` and `.env` are excluded from git via `.gitignore`
