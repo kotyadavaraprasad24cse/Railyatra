@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RailYatra – Railway Reservation</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d45;
+    --accent: #f97316;
+    --accent2: #3b82f6;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --success: #22c55e;
+    --danger: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .track-line {
+    position: fixed;
+    top: 0; bottom: 0;
+    left: 50%;
+    width: 2px;
+    background: linear-gradient(to bottom, transparent, var(--accent), transparent);
+    opacity: 0.07;
+    pointer-events: none;
+    z-index: 0;
+    animation: trackPulse 4s ease-in-out infinite;
+  }
+  @keyframes trackPulse { 0%,100%{opacity:0.05} 50%{opacity:0.12} }
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 0;
+    position: sticky; top: 0;
+    background: rgba(10,15,30,0.92);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+  .header-inner { display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.5rem; letter-spacing: -0.5px; }
+  .logo span { color: var(--accent); }
+  .nav { display: flex; gap: 4px; }
+  .nav button {
+    background: none; border: none; color: var(--muted);
+    font-family: 'DM Sans', sans-serif; font-size: 0.875rem;
+    padding: 8px 16px; border-radius: 8px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .nav button:hover, .nav button.active { color: var(--text); background: var(--surface2); }
+  .nav button.active { color: var(--accent); }
+
+  .hero { padding: 60px 0 40px; text-align: center; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(249,115,22,0.1); border: 1px solid rgba(249,115,22,0.2);
+    color: var(--accent); font-size: 0.75rem; font-weight: 500; letter-spacing: 1px; text-transform: uppercase;
+    padding: 6px 14px; border-radius: 100px; margin-bottom: 20px;
+  }
+  .hero h1 {
+    font-family: 'Syne', sans-serif; font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800; line-height: 1.1; margin-bottom: 16px; letter-spacing: -1px;
+  }
+  .hero h1 em { font-style: normal; color: var(--accent); }
+  .hero p { color: var(--muted); font-size: 1.05rem; max-width: 500px; margin: 0 auto; }
+
+  .tabs {
+    display: flex; gap: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 6px;
+    margin: 32px 0 0;
+    width: fit-content; margin-left: auto; margin-right: auto;
+  }
+  .tab-btn {
+    background: none; border: none;
+    color: var(--muted); font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem; font-weight: 500;
+    padding: 10px 22px; border-radius: 10px; cursor: pointer;
+    transition: all 0.2s; display: flex; align-items: center; gap: 8px;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { background: var(--accent); color: #fff; }
+
+  .panel { display: none; animation: fadeUp 0.3s ease; }
+  .panel.active { display: block; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 28px; margin: 24px 0;
+  }
+  .card-title {
+    font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700;
+    margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+  }
+  .card-title .icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: rgba(249,115,22,0.15); display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+  }
+
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  label { font-size: 0.8rem; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  input, select {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.95rem;
+    padding: 11px 14px; border-radius: 10px; outline: none;
+    transition: border-color 0.2s; -webkit-appearance: none;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--muted); }
+  select option { background: var(--surface2); }
+
+  .btn {
+    background: var(--accent); color: #fff;
+    border: none; font-family: 'Syne', sans-serif; font-weight: 700;
+    font-size: 0.95rem; padding: 13px 28px; border-radius: 10px;
+    cursor: pointer; transition: all 0.2s; letter-spacing: 0.3px;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn:hover { background: #ea6c0a; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(249,115,22,0.3); }
+  .btn:active { transform: translateY(0); }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--border); box-shadow: none; }
+  .btn-danger { background: var(--danger); }
+  .btn-danger:hover { background: #dc2626; box-shadow: 0 8px 24px rgba(239,68,68,0.3); }
+  .btn-full { width: 100%; justify-content: center; margin-top: 8px; }
+
+  .results { margin-top: 20px; }
+  .results-header {
+    font-family: 'Syne', sans-serif; font-size: 0.85rem; font-weight: 700;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;
+  }
+  .train-card {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 20px; margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap; transition: border-color 0.2s; animation: fadeUp 0.3s ease;
+  }
+  .train-card:hover { border-color: rgba(249,115,22,0.3); }
+  .train-info h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; }
+  .train-info p { color: var(--muted); font-size: 0.85rem; margin-top: 3px; }
+  .train-route { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; }
+  .train-route .city { font-weight: 500; }
+  .train-route .arrow { color: var(--accent); font-size: 1.2rem; }
+  .seat-badge {
+    background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2);
+    color: var(--success); font-size: 0.8rem; font-weight: 600; padding: 4px 12px; border-radius: 100px;
+  }
+  .seat-badge.low { background: rgba(249,115,22,0.1); border-color: rgba(249,115,22,0.2); color: var(--accent); }
+  .seat-badge.full { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.2); color: var(--danger); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th {
+    text-align: left; padding: 10px 14px;
+    font-size: 0.75rem; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border);
+  }
+  td { padding: 14px; border-bottom: 1px solid rgba(30,45,69,0.5); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.8rem; font-weight: 600; padding: 4px 10px; border-radius: 100px;
+  }
+  .status-confirmed { background: rgba(34,197,94,0.1); color: var(--success); border: 1px solid rgba(34,197,94,0.2); }
+  .status-cancelled { background: rgba(239,68,68,0.1); color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
+  .status-waitlist { background: rgba(249,115,22,0.1); color: var(--accent); border: 1px solid rgba(249,115,22,0.2); }
+
+  .pnr-code {
+    font-family: monospace; font-size: 0.85rem;
+    background: var(--surface); padding: 3px 8px; border-radius: 6px;
+    border: 1px solid var(--border); letter-spacing: 1px;
+  }
+
+  .toast-container { position: fixed; top: 80px; right: 24px; z-index: 999; display: flex; flex-direction: column; gap: 10px; }
+  .toast {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 18px;
+    display: flex; align-items: center; gap: 12px;
+    min-width: 280px; max-width: 380px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4); animation: slideIn 0.3s ease;
+  }
+  .toast.success { border-color: rgba(34,197,94,0.3); }
+  .toast.error { border-color: rgba(239,68,68,0.3); }
+  @keyframes slideIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+  .toast-icon { font-size: 1.2rem; }
+  .toast-text { font-size: 0.9rem; font-weight: 500; }
+  .toast-sub { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+  .pnr-result {
+    background: var(--surface2); border: 1px solid rgba(249,115,22,0.3);
+    border-radius: 14px; padding: 24px; margin-top: 20px;
+    display: none; animation: fadeUp 0.3s ease;
+  }
+  .pnr-result.show { display: block; }
+  .pnr-detail { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-top: 16px; }
+  .pnr-item label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .pnr-item p { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.05rem; margin-top: 4px; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+  .stat-card .stat-label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-card .stat-val { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; margin-top: 6px; }
+  .stat-card .stat-val.orange { color: var(--accent); }
+  .stat-card .stat-val.blue { color: var(--accent2); }
+  .stat-card .stat-val.green { color: var(--success); }
+
+  .empty { text-align: center; padding: 40px; color: var(--muted); }
+  .empty .empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+  .empty p { font-size: 0.95rem; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  /* Station count badge */
+  .meta-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2);
+    color: var(--accent2); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.5px;
+    padding: 3px 10px; border-radius: 100px; margin-left: 10px;
+  }
+
+  @media (max-width: 600px) {
+    .tabs { flex-wrap: wrap; }
+    .train-card { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="track-line"></div>
+<div class="toast-container" id="toastContainer"></div>
+
+<header>
+  <div class="container header-inner">
+    <div class="logo">Rail<span>Yatra</span></div>
+    <nav class="nav">
+      <button class="active" onclick="showTab('search')">🔍 Search</button>
+      <button onclick="showTab('book')">🎫 Book</button>
+      <button onclick="showTab('pnr')">📋 PNR</button>
+      <button onclick="showTab('manage')">⚙️ Manage</button>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+  <div class="hero">
+    <div class="hero-badge">🚂 Railway Reservation System</div>
+    <h1>Book Your Journey<br/><em>Across India</em></h1>
+    <p>Search trains, book tickets, check PNR status — your complete travel companion.</p>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('search')">🔍 Search Trains</button>
+      <button class="tab-btn" onclick="showTab('book')">🎫 Book Ticket</button>
+      <button class="tab-btn" onclick="showTab('pnr')">📋 PNR Status</button>
+      <button class="tab-btn" onclick="showTab('manage')">⚙️ Manage</button>
+    </div>
+  </div>
+
+  <!-- SEARCH PANEL -->
+  <div class="panel active" id="panel-search">
+    <div class="card">
+      <div class="card-title">
+        <div class="icon">🔍</div> Search Trains
+        <span class="meta-badge">Loading...</span>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>From</label>
+          <select id="searchFrom">
+            <option value="">Select Source</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>To</label>
+          <select id="searchTo">
+            <option value="">Select Destination</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="searchDate"/>
+        </div>
+      </div>
+      <button class="btn btn-full" onclick="searchTrains()" style="margin-top:16px">🔍 Search Trains</button>
+    </div>
+    <div class="results" id="searchResults"></div>
+  </div>
+
+  <!-- BOOK PANEL -->
+  <div class="panel" id="panel-book">
+    <div class="card">
+      <div class="card-title"><div class="icon">🎫</div> Book a Ticket</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Passenger Name</label>
+          <input type="text" id="bookName" placeholder="Enter full name"/>
+        </div>
+        <div class="form-group">
+          <label>Age</label>
+          <input type="number" id="bookAge" placeholder="Age" min="1" max="120"/>
+        </div>
+        <div class="form-group">
+          <label>Gender</label>
+          <select id="bookGender">
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="text" id="bookPhone" placeholder="10-digit number"/>
+        </div>
+        <div class="form-group">
+          <label>Train</label>
+          <select id="bookTrain"></select>
+        </div>
+        <div class="form-group">
+          <label>Travel Date</label>
+          <input type="date" id="bookDate"/>
+        </div>
+        <div class="form-group">
+          <label>Seat Class</label>
+          <select id="bookClass">
+            <option value="Sleeper">Sleeper (SL)</option>
+            <option value="3AC">3 Tier AC (3A)</option>
+            <option value="2AC">2 Tier AC (2A)</option>
+            <option value="1AC">First Class AC (1A)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Passengers</label>
+          <select id="bookCount">
+            <option value="1">1 Passenger</option>
+            <option value="2">2 Passengers</option>
+            <option value="3">3 Passengers</option>
+            <option value="4">4 Passengers</option>
+          </select>
+        </div>
+      </div>
+      <hr class="divider"/>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Payment Method</label>
+          <select id="bookPayment">
+            <option value="UPI">UPI</option>
+            <option value="Card">Debit/Credit Card</option>
+            <option value="NetBanking">Net Banking</option>
+            <option value="Wallet">Wallet</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-full" onclick="bookTicket()">🎫 Confirm Booking</button>
+    </div>
+  </div>
+
+  <!-- PNR PANEL -->
+  <div class="panel" id="panel-pnr">
+    <div class="card">
+      <div class="card-title"><div class="icon">📋</div> PNR Status Check</div>
+      <div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
+        <div class="form-group" style="flex:1; min-width:200px;">
+          <label>Enter PNR Number</label>
+          <input type="text" id="pnrInput" placeholder="e.g. PNR4829301" style="letter-spacing:2px; font-family:monospace;"/>
+        </div>
+        <button class="btn" onclick="checkPNR()">📋 Check Status</button>
+      </div>
+      <div class="pnr-result" id="pnrResult"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><div class="icon">🕒</div> Recent Bookings</div>
+      <div id="recentBookings"></div>
+    </div>
+  </div>
+
+  <!-- MANAGE PANEL -->
+  <div class="panel" id="panel-manage">
+    <div class="stats" id="statsGrid"></div>
+    <div class="card">
+      <div class="card-title"><div class="icon">⚙️</div> All Bookings</div>
+      <div id="allBookings"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── API CONFIGURATION ─────────────────────────────────────
+// Update this to match your backend server URL
+// For local development: http://localhost:3000
+// For production: Update to your deployed backend URL
+const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '' || window.location.protocol === 'file:';
+const API_BASE = isLocalHost
+  ? 'http://localhost:3000'
+  : 'https://your-deployed-backend-url.com'; // Change this to your production backend URL
+
+// ── STATIONS ─────────────────────────────────────────────
+let stations = [
+  "Hyderabad", "Chennai", "Bangalore", "Mumbai", "Delhi",
+  "Kolkata", "Pune", "Ahmedabad", "Jaipur", "Lucknow",
+  "Nagpur", "Visakhapatnam", "Bhopal", "Patna", "Kochi"
+];
+
+// ── TRAINS ────────────────────────────────────────────────
+let trains = [];
+
+// ── INIT DROPDOWNS ────────────────────────────────────────
+function populateStations() {
+  // Fetch trains from backend
+  fetch(`${API_BASE}/trains`)
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+      return res.json();
+    })
+    .then(data => {
+      if (!Array.isArray(data)) throw new Error('Invalid data format from backend');
+      
+      trains = data;
+      
+      // Extract unique stations from trains
+      const stationSet = new Set();
+      trains.forEach(t => {
+        if (t.source) stationSet.add(t.source);
+        if (t.destination) stationSet.add(t.destination);
+      });
+      stations = Array.from(stationSet).sort();
+
+      // Populate search dropdowns
+      const selects = ['searchFrom', 'searchTo'];
+      selects.forEach(id => {
+        const el = document.getElementById(id);
+        el.innerHTML = '<option value="">Select Source</option>'; // Clear existing
+        stations.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s;
+          opt.textContent = s;
+          el.appendChild(opt);
+        });
+      });
+
+      // Populate book train dropdown with new train data format
+      const bookTrain = document.getElementById('bookTrain');
+      bookTrain.innerHTML = '<option value="">Select a Train</option>'; // Clear existing
+      trains.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.train_id;
+        opt.textContent = `${t.train_name} (${t.train_id}) – ${t.source} → ${t.destination}`;
+        bookTrain.appendChild(opt);
+      });
+
+      // Update meta-badge with actual counts
+      const badge = document.querySelector('.meta-badge');
+      if (badge) {
+        badge.textContent = `${stations.length} Stations · ${trains.length} Trains`;
+      }
+      
+      console.log(`✅ Loaded ${trains.length} trains from backend`);
+    })
+    .catch(err => {
+      console.error('❌ Failed to load trains:', err);
+      const badge = document.querySelector('.meta-badge');
+      if (badge) badge.textContent = '⚠️ Backend Offline';
+      toast('Backend not running', 'Make sure backend server is started on port 3000', 'error');
+    });
+}
+
+// ── DATA STORE ────────────────────────────────────────────
+let bookings = JSON.parse(localStorage.getItem('rrs_bookings') || '[]');
+let passengers = JSON.parse(localStorage.getItem('rrs_passengers') || '[]');
+
+function save() {
+  localStorage.setItem('rrs_bookings', JSON.stringify(bookings));
+  localStorage.setItem('rrs_passengers', JSON.stringify(passengers));
+}
+function genPNR() { return 'PNR' + Math.floor(1000000 + Math.random() * 9000000); }
+
+// ── TABS ──────────────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b => { if(b.textContent.toLowerCase().includes(name.slice(0,3))) b.classList.add('active'); });
+  document.querySelectorAll('.nav button').forEach(b => { if(b.textContent.toLowerCase().includes(name.slice(0,3))) b.classList.add('active'); });
+  if(name === 'manage') renderManage();
+  if(name === 'pnr') renderRecent();
+}
+
+// ── TOAST ──────────────────────────────────────────────────
+function toast(title, sub, type='success') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<div class="toast-icon">${type==='success'?'✅':'❌'}</div><div><div class="toast-text">${title}</div>${sub?`<div class="toast-sub">${sub}</div>`:''}</div>`;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+
+// ── SEARCH ────────────────────────────────────────────────
+function searchTrains() {
+  const from = document.getElementById('searchFrom').value;
+  const to   = document.getElementById('searchTo').value;
+  const date = document.getElementById('searchDate').value;
+  const res  = document.getElementById('searchResults');
+
+  if (!from || !to) { toast('Select source & destination', '', 'error'); return; }
+  if (from === to)  { toast('Source and destination cannot be same!', '', 'error'); return; }
+
+  let found = trains.filter(t =>
+    t.source.toLowerCase() === from.toLowerCase() &&
+    t.destination.toLowerCase() === to.toLowerCase()
+  );
+
+  if (found.length === 0) {
+    res.innerHTML = `<div class="empty"><div class="empty-icon">🚫</div><p>No direct trains found for this route.<br/>Try a different route.</p></div>`;
+    return;
+  }
+
+  res.innerHTML = `<div class="results-header">${found.length} train(s) found ${date ? 'for ' + date : ''}</div>`;
+  found.forEach(tr => {
+    const booked = bookings.filter(b => b.trainId===tr.train_id && b.status==='Confirmed').reduce((s,b)=>s+b.count,0);
+    const avail  = tr.total_seats - booked;
+    const cls    = avail > 20 ? '' : avail > 5 ? 'low' : 'full';
+    const label  = avail > 0 ? `${avail} seats` : 'Full';
+    res.innerHTML += `
+    <div class="train-card">
+      <div class="train-info">
+        <h3>🚂 ${tr.train_name}</h3>
+        <p>Train #${tr.train_id}</p>
+      </div>
+      <div class="train-route">
+        <span class="city">${tr.source}</span>
+        <span class="arrow">→</span>
+        <span class="city">${tr.destination}</span>
+      </div>
+      <div>
+        <div style="font-size:0.85rem;color:var(--muted)">Departure</div>
+        <div style="font-weight:600">${tr.departure_time}</div>
+      </div>
+      <div>
+        <div style="font-size:0.85rem;color:var(--muted)">From</div>
+        <div style="font-weight:700;color:var(--accent)">₹299</div>
+      </div>
+      <span class="seat-badge ${cls}">${label}</span>
+      <button class="btn" onclick="quickBook(${tr.train_id})" ${avail<=0?'disabled style="opacity:0.4;cursor:not-allowed"':''}>Book →</button>
+    </div>`;
+  });
+}
+
+function quickBook(trainId) {
+  document.getElementById('bookTrain').value = trainId;
+  showTab('book');
+  toast('Train selected!', 'Fill in your details to confirm booking');
+}
+
+// ── BOOK ──────────────────────────────────────────────────
+function bookTicket() {
+  const name       = document.getElementById('bookName').value.trim();
+  const age        = document.getElementById('bookAge').value;
+  const gender     = document.getElementById('bookGender').value;
+  const phone      = document.getElementById('bookPhone').value.trim();
+  const trainId    = document.getElementById('bookTrain').value;
+  const travelDate = document.getElementById('bookDate').value;
+  const cls        = document.getElementById('bookClass').value;
+  const payment    = document.getElementById('bookPayment').value;
+
+  if (!name || !age || !phone || !trainId || !travelDate) {
+    toast('Please fill all booking fields', '', 'error');
+    return;
+  }
+
+  fetch(`${API_BASE}/book`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      name,
+      age: Number(age),
+      gender,
+      phone,
+      train_id: Number(trainId),
+      classType: cls,
+      travel_date: travelDate,
+      paymentMethod: payment
+    })
+  })
+  .then(async res => {
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Booking failed');
+    return data;
+  })
+  .then(data => {
+    const pnr = data.PNR || data.pnr;
+    toast('Booking confirmed!', `PNR: ${pnr}`);
+    document.getElementById('pnrInput').value = pnr || '';
+    renderRecent();
+    renderManage();
+    showTab('pnr');
+    checkPNR();
+  })
+  .catch(err => {
+    console.error(err);
+    toast('Booking failed', err.message, 'error');
+  });
+}
+
+// ── PNR ──────────────────────────────────────────────────
+function checkPNR() {
+  const pnr = document.getElementById('pnrInput').value.trim();
+  const resultBox = document.getElementById('pnrResult');
+
+  if (!pnr) {
+    resultBox.classList.remove('show');
+    resultBox.innerHTML = '';
+    toast('Enter a PNR number', '', 'error');
+    return;
+  }
+
+  fetch(`${API_BASE}/pnr/${pnr}`)
+    .then(async res => {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'PNR not found');
+      return data;
+    })
+    .then(data => {
+      const pnrCode = data.PNR || data.pnr;
+      const trainName = data.train_name || data.train_no || 'N/A';
+
+      resultBox.innerHTML = `
+        <div class="card-title" style="margin-bottom:8px"><div class="icon">✅</div> PNR Found</div>
+        <div class="pnr-detail">
+          <div class="pnr-item"><label>PNR</label><p>${pnrCode}</p></div>
+          <div class="pnr-item"><label>Passenger</label><p>${data.name}</p></div>
+          <div class="pnr-item"><label>Train</label><p>${trainName}</p></div>
+          <div class="pnr-item"><label>Class</label><p>${data.class}</p></div>
+          <div class="pnr-item"><label>Status</label><p>${data.status}</p></div>
+        </div>
+      `;
+      resultBox.classList.add('show');
+    })
+    .catch(err => {
+      resultBox.classList.remove('show');
+      resultBox.innerHTML = '';
+      toast('PNR not found', err.message, 'error');
+    });
+}
+function renderRecent() {
+  const div = document.getElementById('recentBookings');
+
+  fetch(`${API_BASE}/bookings`)
+    .then(res => res.json())
+    .then(data => {
+      const recent = [...data].slice(0, 5);
+
+      if (!recent.length) {
+        div.innerHTML = `<div class="empty"><div class="empty-icon">🎫</div><p>No bookings yet</p></div>`;
+        return;
+      }
+
+      div.innerHTML = `<table><thead><tr><th>PNR</th><th>Passenger</th><th>Train</th><th>Status</th></tr></thead><tbody>` +
+        recent.map(b => `<tr>
+          <td><span class="pnr-code">${b.PNR || b.pnr}</span></td>
+          <td>${b.name}</td>
+          <td>${b.train_name || b.train_no}</td>
+          <td><span class="status-badge ${b.status==='Confirmed'?'status-confirmed':b.status==='Cancelled'?'status-cancelled':'status-waitlist'}">● ${b.status}</span></td>
+        </tr>`).join('') + `</tbody></table>`;
+    })
+    .catch(() => {
+      div.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><p>Unable to load bookings</p></div>`;
+    });
+}
+
+// ── MANAGE ────────────────────────────────────────────────
+function renderManage() {
+  fetch(`${API_BASE}/bookings`)
+    .then(res => res.json())
+    .then(data => {
+      const confirmed = data.filter(b => b.status === 'Confirmed').length;
+      const cancelled = data.filter(b => b.status === 'Cancelled').length;
+
+      document.getElementById('statsGrid').innerHTML = `
+        <div class="stat-card"><div class="stat-label">Total Bookings</div><div class="stat-val orange">${data.length}</div></div>
+        <div class="stat-card"><div class="stat-label">Confirmed</div><div class="stat-val green">${confirmed}</div></div>
+        <div class="stat-card"><div class="stat-label">Cancelled</div><div class="stat-val blue">${cancelled}</div></div>
+      `;
+
+      if (!data.length) {
+        document.getElementById('allBookings').innerHTML = `<div class="empty"><div class="empty-icon">🧾</div><p>No bookings found</p></div>`;
+        return;
+      }
+
+      let html = `<table><thead><tr><th>PNR</th><th>Name</th><th>Train</th><th>Class</th><th>Status</th><th>Action</th></tr></thead><tbody>`;
+
+      data.forEach(b => {
+        const pnr = b.PNR || b.pnr;
+        const trainName = b.train_name || b.train_no;
+        html += `
+          <tr>
+            <td>${pnr}</td>
+            <td>${b.name}</td>
+            <td>${trainName}</td>
+            <td>${b.class}</td>
+            <td><span class="status-badge ${b.status==='Confirmed'?'status-confirmed':b.status==='Cancelled'?'status-cancelled':'status-waitlist'}">● ${b.status}</span></td>
+            <td>${b.status !== 'Cancelled' ? `<button class="btn btn-danger" onclick="cancelBooking('${pnr}')">Cancel</button>` : '-'}</td>
+          </tr>
+        `;
+      });
+
+      html += `</tbody></table>`;
+      document.getElementById('allBookings').innerHTML = html;
+    })
+    .catch(() => {
+      document.getElementById('statsGrid').innerHTML = '';
+      document.getElementById('allBookings').innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><p>Unable to load bookings</p></div>`;
+    });
+}
+
+function cancelBooking(pnr) {
+  fetch(`${API_BASE}/cancel/${pnr}`, {
+    method: 'PUT'
+  })
+  .then(async res => {
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Cancellation failed');
+    return data;
+  })
+  .then(() => {
+    toast('Booking cancelled', pnr);
+    renderManage();
+    renderRecent();
+  })
+  .catch(err => {
+    toast('Cancellation failed', err.message, 'error');
+  });
+}
+
+// ── BOOT ──────────────────────────────────────────────────
+populateStations();
+document.getElementById('searchDate').valueAsDate = new Date();
+document.getElementById('bookDate').valueAsDate   = new Date();
+</script>
+</body>
+</html>
