@@ -429,15 +429,20 @@ let trains = [];
 function populateStations() {
   // Fetch trains from backend
   fetch(`${API_BASE}/trains`)
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+      return res.json();
+    })
     .then(data => {
+      if (!Array.isArray(data)) throw new Error('Invalid data format from backend');
+      
       trains = data;
       
       // Extract unique stations from trains
       const stationSet = new Set();
       trains.forEach(t => {
-        stationSet.add(t.source);
-        stationSet.add(t.destination);
+        if (t.source) stationSet.add(t.source);
+        if (t.destination) stationSet.add(t.destination);
       });
       stations = Array.from(stationSet).sort();
 
@@ -445,6 +450,7 @@ function populateStations() {
       const selects = ['searchFrom', 'searchTo'];
       selects.forEach(id => {
         const el = document.getElementById(id);
+        el.innerHTML = '<option value="">Select Source</option>'; // Clear existing
         stations.forEach(s => {
           const opt = document.createElement('option');
           opt.value = s;
@@ -455,6 +461,7 @@ function populateStations() {
 
       // Populate book train dropdown with new train data format
       const bookTrain = document.getElementById('bookTrain');
+      bookTrain.innerHTML = '<option value="">Select a Train</option>'; // Clear existing
       trains.forEach(t => {
         const opt = document.createElement('option');
         opt.value = t.train_id;
@@ -463,11 +470,18 @@ function populateStations() {
       });
 
       // Update meta-badge with actual counts
-      document.querySelector('.meta-badge').textContent = `${stations.length} Stations · ${trains.length} Trains`;
+      const badge = document.querySelector('.meta-badge');
+      if (badge) {
+        badge.textContent = `${stations.length} Stations · ${trains.length} Trains`;
+      }
+      
+      console.log(`✅ Loaded ${trains.length} trains from backend`);
     })
     .catch(err => {
-      console.error('Failed to load trains:', err);
-      toast('Failed to load trains from backend', 'Using default data', 'error');
+      console.error('❌ Failed to load trains:', err);
+      const badge = document.querySelector('.meta-badge');
+      if (badge) badge.textContent = '⚠️ Backend Offline';
+      toast('Backend not running', 'Make sure backend server is started on port 3000', 'error');
     });
 }
 
