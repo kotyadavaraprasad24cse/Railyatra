@@ -284,7 +284,7 @@
     <div class="card">
       <div class="card-title">
         <div class="icon">🔍</div> Search Trains
-        <span class="meta-badge">15 Stations · 20 Trains</span>
+        <span class="meta-badge">Loading...</span>
       </div>
       <div class="form-grid">
         <div class="form-group">
@@ -407,58 +407,64 @@
 </div>
 
 <script>
+// ── API CONFIGURATION ─────────────────────────────────────
+// Update this to match your backend server URL
+const API_BASE = 'http://localhost:3000';
+
 // ── STATIONS ─────────────────────────────────────────────
-const stations = [
+let stations = [
   "Hyderabad", "Chennai", "Bangalore", "Mumbai", "Delhi",
   "Kolkata", "Pune", "Ahmedabad", "Jaipur", "Lucknow",
   "Nagpur", "Visakhapatnam", "Bhopal", "Patna", "Kochi"
 ];
 
 // ── TRAINS ────────────────────────────────────────────────
-const trains = [
-  // Original 4
-  { id:1,  name:'Charminar Express',      no:'12759', src:'Hyderabad',    dst:'Chennai',       seats:120, time:'18:00', fare:{Sleeper:499,  '3AC':1200, '2AC':1800, '1AC':3200} },
-  { id:2,  name:'Rajdhani Express',       no:'12429', src:'Hyderabad',    dst:'Delhi',         seats:150, time:'06:00', fare:{Sleeper:699,  '3AC':1500, '2AC':2100, '1AC':3800} },
-  { id:3,  name:'Deccan Queen',           no:'12123', src:'Mumbai',       dst:'Pune',          seats:80,  time:'07:15', fare:{Sleeper:299,  '3AC':800,  '2AC':1200, '1AC':2200} },
-  { id:4,  name:'Shatabdi Express',       no:'12001', src:'Delhi',        dst:'Bhopal',        seats:120, time:'06:15', fare:{Sleeper:599,  '3AC':1100, '2AC':1600, '1AC':2900} },
-  // New 16
-  { id:5,  name:'Duronto Express',        no:'12213', src:'Mumbai',       dst:'Kolkata',       seats:160, time:'11:05', fare:{Sleeper:899,  '3AC':2100, '2AC':3200, '1AC':5500} },
-  { id:6,  name:'Garib Rath Express',     no:'12909', src:'Delhi',        dst:'Bangalore',     seats:200, time:'22:30', fare:{Sleeper:499,  '3AC':1100, '2AC':1700, '1AC':3100} },
-  { id:7,  name:'Vande Bharat Express',   no:'22439', src:'Delhi',        dst:'Jaipur',        seats:100, time:'06:00', fare:{Sleeper:700,  '3AC':1400, '2AC':2000, '1AC':3600} },
-  { id:8,  name:'Humsafar Express',       no:'12560', src:'Lucknow',      dst:'Delhi',         seats:140, time:'19:45', fare:{Sleeper:450,  '3AC':1050, '2AC':1550, '1AC':2800} },
-  { id:9,  name:'Tejas Express',          no:'22120', src:'Mumbai',       dst:'Ahmedabad',     seats:110, time:'06:40', fare:{Sleeper:550,  '3AC':1300, '2AC':1900, '1AC':3400} },
-  { id:10, name:'Konkan Kanya Express',   no:'10111', src:'Mumbai',       dst:'Kochi',         seats:130, time:'23:00', fare:{Sleeper:750,  '3AC':1750, '2AC':2600, '1AC':4500} },
-  { id:11, name:'East Coast Express',     no:'18645', src:'Hyderabad',    dst:'Visakhapatnam', seats:140, time:'05:45', fare:{Sleeper:380,  '3AC':900,  '2AC':1350, '1AC':2400} },
-  { id:12, name:'Coromandel Express',     no:'12841', src:'Kolkata',      dst:'Chennai',       seats:150, time:'14:50', fare:{Sleeper:820,  '3AC':1900, '2AC':2800, '1AC':4800} },
-  { id:13, name:'Sampark Kranti Express', no:'12650', src:'Bangalore',    dst:'Delhi',         seats:160, time:'22:00', fare:{Sleeper:950,  '3AC':2200, '2AC':3300, '1AC':5800} },
-  { id:14, name:'Patna Rajdhani',         no:'12309', src:'Patna',        dst:'Delhi',         seats:140, time:'18:25', fare:{Sleeper:750,  '3AC':1750, '2AC':2600, '1AC':4600} },
-  { id:15, name:'Nagpur Express',         no:'12119', src:'Mumbai',       dst:'Nagpur',        seats:120, time:'21:00', fare:{Sleeper:420,  '3AC':980,  '2AC':1450, '1AC':2600} },
-  { id:16, name:'Gujarat Mail',           no:'12901', src:'Mumbai',       dst:'Ahmedabad',     seats:130, time:'22:05', fare:{Sleeper:310,  '3AC':740,  '2AC':1100, '1AC':1950} },
-  { id:17, name:'Howrah Superfast',       no:'12020', src:'Kolkata',      dst:'Bhopal',        seats:150, time:'07:30', fare:{Sleeper:680,  '3AC':1580, '2AC':2350, '1AC':4100} },
-  { id:18, name:'Chennai Rajdhani',       no:'12433', src:'Chennai',      dst:'Delhi',         seats:160, time:'08:00', fare:{Sleeper:1050, '3AC':2400, '2AC':3600, '1AC':6200} },
-  { id:19, name:'Kochi Express',          no:'16382', src:'Chennai',      dst:'Kochi',         seats:110, time:'19:15', fare:{Sleeper:380,  '3AC':880,  '2AC':1300, '1AC':2350} },
-  { id:20, name:'Secunderabad Express',   no:'17031', src:'Hyderabad',    dst:'Nagpur',        seats:130, time:'23:15', fare:{Sleeper:340,  '3AC':800,  '2AC':1180, '1AC':2100} },
-];
+let trains = [];
 
 // ── INIT DROPDOWNS ────────────────────────────────────────
 function populateStations() {
-  const selects = ['searchFrom', 'searchTo'];
-  selects.forEach(id => {
-    const el = document.getElementById(id);
-    stations.forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s; opt.textContent = s;
-      el.appendChild(opt);
-    });
-  });
+  // Fetch trains from backend
+  fetch(`${API_BASE}/trains`)
+    .then(res => res.json())
+    .then(data => {
+      trains = data;
+      
+      // Extract unique stations from trains
+      const stationSet = new Set();
+      trains.forEach(t => {
+        stationSet.add(t.source);
+        stationSet.add(t.destination);
+      });
+      stations = Array.from(stationSet).sort();
 
-  const bookTrain = document.getElementById('bookTrain');
-  trains.forEach(t => {
-    const opt = document.createElement('option');
-    opt.value = t.id;
-    opt.textContent = `${t.name} (${t.no}) – ${t.src} → ${t.dst}`;
-    bookTrain.appendChild(opt);
-  });
+      // Populate search dropdowns
+      const selects = ['searchFrom', 'searchTo'];
+      selects.forEach(id => {
+        const el = document.getElementById(id);
+        stations.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s;
+          opt.textContent = s;
+          el.appendChild(opt);
+        });
+      });
+
+      // Populate book train dropdown with new train data format
+      const bookTrain = document.getElementById('bookTrain');
+      trains.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.train_id;
+        opt.textContent = `${t.train_name} (${t.train_id}) – ${t.source} → ${t.destination}`;
+        bookTrain.appendChild(opt);
+      });
+
+      // Update meta-badge with actual counts
+      document.querySelector('.meta-badge').textContent = `${stations.length} Stations · ${trains.length} Trains`;
+    })
+    .catch(err => {
+      console.error('Failed to load trains:', err);
+      toast('Failed to load trains from backend', 'Using default data', 'error');
+    });
 }
 
 // ── DATA STORE ────────────────────────────────────────────
@@ -504,8 +510,8 @@ function searchTrains() {
   if (from === to)  { toast('Source and destination cannot be same!', '', 'error'); return; }
 
   let found = trains.filter(t =>
-    t.src.toLowerCase() === from.toLowerCase() &&
-    t.dst.toLowerCase() === to.toLowerCase()
+    t.source.toLowerCase() === from.toLowerCase() &&
+    t.destination.toLowerCase() === to.toLowerCase()
   );
 
   if (found.length === 0) {
@@ -515,31 +521,31 @@ function searchTrains() {
 
   res.innerHTML = `<div class="results-header">${found.length} train(s) found ${date ? 'for ' + date : ''}</div>`;
   found.forEach(tr => {
-    const booked = bookings.filter(b => b.trainId===tr.id && b.status==='Confirmed').reduce((s,b)=>s+b.count,0);
-    const avail  = tr.seats - booked;
+    const booked = bookings.filter(b => b.trainId===tr.train_id && b.status==='Confirmed').reduce((s,b)=>s+b.count,0);
+    const avail  = tr.total_seats - booked;
     const cls    = avail > 20 ? '' : avail > 5 ? 'low' : 'full';
     const label  = avail > 0 ? `${avail} seats` : 'Full';
     res.innerHTML += `
     <div class="train-card">
       <div class="train-info">
-        <h3>🚂 ${tr.name}</h3>
-        <p>Train #${tr.no}</p>
+        <h3>🚂 ${tr.train_name}</h3>
+        <p>Train #${tr.train_id}</p>
       </div>
       <div class="train-route">
-        <span class="city">${tr.src}</span>
+        <span class="city">${tr.source}</span>
         <span class="arrow">→</span>
-        <span class="city">${tr.dst}</span>
+        <span class="city">${tr.destination}</span>
       </div>
       <div>
         <div style="font-size:0.85rem;color:var(--muted)">Departure</div>
-        <div style="font-weight:600">${tr.time}</div>
+        <div style="font-weight:600">${tr.departure_time}</div>
       </div>
       <div>
         <div style="font-size:0.85rem;color:var(--muted)">From</div>
-        <div style="font-weight:700;color:var(--accent)">₹${tr.fare.Sleeper}</div>
+        <div style="font-weight:700;color:var(--accent)">₹299</div>
       </div>
       <span class="seat-badge ${cls}">${label}</span>
-      <button class="btn" onclick="quickBook(${tr.id})" ${avail<=0?'disabled style="opacity:0.4;cursor:not-allowed"':''}>Book →</button>
+      <button class="btn" onclick="quickBook(${tr.train_id})" ${avail<=0?'disabled style="opacity:0.4;cursor:not-allowed"':''}>Book →</button>
     </div>`;
   });
 }
@@ -566,7 +572,7 @@ function bookTicket() {
     return;
   }
 
-  fetch('http://localhost:3000/book', {
+  fetch(`${API_BASE}/book`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -614,7 +620,7 @@ function checkPNR() {
     return;
   }
 
-  fetch(`http://localhost:3000/pnr/${pnr}`)
+  fetch(`${API_BASE}/pnr/${pnr}`)
     .then(async res => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'PNR not found');
@@ -645,7 +651,7 @@ function checkPNR() {
 function renderRecent() {
   const div = document.getElementById('recentBookings');
 
-  fetch('http://localhost:3000/bookings')
+  fetch(`${API_BASE}/bookings`)
     .then(res => res.json())
     .then(data => {
       const recent = [...data].slice(0, 5);
@@ -670,7 +676,7 @@ function renderRecent() {
 
 // ── MANAGE ────────────────────────────────────────────────
 function renderManage() {
-  fetch('http://localhost:3000/bookings')
+  fetch(`${API_BASE}/bookings`)
     .then(res => res.json())
     .then(data => {
       const confirmed = data.filter(b => b.status === 'Confirmed').length;
@@ -714,7 +720,7 @@ function renderManage() {
 }
 
 function cancelBooking(pnr) {
-  fetch(`http://localhost:3000/cancel/${pnr}`, {
+  fetch(`${API_BASE}/cancel/${pnr}`, {
     method: 'PUT'
   })
   .then(async res => {
