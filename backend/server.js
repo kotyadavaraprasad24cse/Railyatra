@@ -4,7 +4,9 @@ const cors = require('cors');
 
 const app = express();
 app.use(cors({
-  origin: 'https://railyatra-seven.vercel.app'  // your Vercel URL
+  origin: ['https://railyatra-seven.vercel.app', 'http://localhost:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
 }));
 app.use(express.json());
 
